@@ -2,11 +2,31 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import { renameSync, readdirSync, rmdirSync } from 'fs';
 
 export default defineConfig(() => {
   return {
     base: '/EventDrink/',
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), {
+      name: 'vite-plugin-fix-html-output',
+      apply: 'build',
+      enforce: 'post',
+      writeBundle() {
+        // Move index.html from docs/src/ to docs/
+        try {
+          const srcPath = path.resolve(__dirname, 'docs/src/index.html');
+          const destPath = path.resolve(__dirname, 'docs/index.html');
+          renameSync(srcPath, destPath);
+          // Remove empty src directory
+          const srcDir = path.resolve(__dirname, 'docs/src');
+          if (readdirSync(srcDir).length === 0) {
+            rmdirSync(srcDir);
+          }
+        } catch (e) {
+          console.warn('Could not move index.html:', e.message);
+        }
+      }
+    }],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
