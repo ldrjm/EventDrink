@@ -233,8 +233,9 @@ export function useAppController() {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   // --- CONTROLE DE AUTENTICAÇÃO E PERFIL DO USUÁRIO ---
-  // Inicia sempre deslogado para evitar sessão fictícia automática.
-  const [currentUser, setCurrentUser] = useState<UserSession | null>(() => ({
+  // Inicia a sessão a partir do localStorage quando disponível.
+  // Isso permite manter o estado de login entre recarregamentos.
+  const guestUser: UserSession = {
     name: '',
     email: '',
     avatarInitials: 'CO',
@@ -243,7 +244,19 @@ export function useAppController() {
     role: 'FREE',
     eventsCount: 0,
     phone: ''
-  }));
+  };
+
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(() => {
+    try {
+      const saved = localStorage.getItem('eventdrink_user_session');
+      if (saved) {
+        return JSON.parse(saved) as UserSession;
+      }
+    } catch (e) {
+      console.warn('Não foi possível carregar a sessão de usuário do localStorage.', e);
+    }
+    return guestUser;
+  });
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   

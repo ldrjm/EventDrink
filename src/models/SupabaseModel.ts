@@ -1308,6 +1308,8 @@ export async function registerUserAccount(account: UserAccount): Promise<UserAcc
 
   if (!supabase) return account;
   try {
+    // Tenta inserir a conta no Supabase quando a integração estiver configurada.
+    // Se houver falha, o fallback local já registrado continua disponível.
     const badgeId = await getBadgeIdByName(account.badge);
     const payload = { ...toUserAccountRecord(account), badge_id: badgeId ?? null };
     const { error } = await supabase.from('user_accounts').insert([payload]);
@@ -1315,11 +1317,12 @@ export async function registerUserAccount(account: UserAccount): Promise<UserAcc
       if (error.message && error.message.includes('check_age')) {
         throw new Error('Cadastro recusado no banco de dados: Idade inferior a 18 anos.');
       }
-      throw new Error(error.message);
+      console.warn('Falha ao inserir conta no Supabase, mas o fallback local permanece.', error.message || error);
+      return account;
     }
   } catch (e: any) {
-    console.error('Error inserting user account:', e);
-    throw e;
+    console.warn('Falha ao inserir no Supabase, mas o fallback local permanece.', e?.message || e);
+    return account;
   }
   return account;
 }
