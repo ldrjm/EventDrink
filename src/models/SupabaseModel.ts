@@ -1204,6 +1204,122 @@ export async function insertAuditLog(log: AuditLog): Promise<AuditLog> {
   return log;
 }
 
+// =============== SUPABASE STORAGE: DRINK IMAGES ===============
+
+/**
+ * Upload de imagem de bebida para Supabase Storage
+ * @param file Arquivo de imagem (PNG, JPG, WebP, etc)
+ * @param drinkId ID da bebida (para organizar pasta)
+ * @returns URL pública da imagem ou null se erro
+ */
+export async function uploadDrinkImage(file: File, drinkId: string): Promise<string | null> {
+  if (!supabase) {
+    console.warn('Supabase não está configurado. Upload de imagem não disponível.');
+    return null;
+  }
+
+  try {
+    // Validar tipo de arquivo
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Tipo de arquivo inválido. Use JPG, PNG, WebP ou GIF.');
+    }
+
+    // Validar tamanho (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('Arquivo muito grande. Máximo 5MB.');
+    }
+
+    // Gerar nome único para o arquivo
+    const timestamp = Date.now();
+    const fileName = `${drinkId}_${timestamp}_${file.name}`;
+    const filePath = `drinks/${drinkId}/${fileName}`;
+
+    console.log(`Uploading ${filePath}...`);
+
+    // Upload do arquivo
+    const { data, error } = await supabase.storage
+      .from('drinks_images') // Nome do bucket (precisa ser criado no Supabase)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Erro ao fazer upload:', error);
+      throw error;
+    }
+
+    // Gerar URL pública
+    const { data: publicUrlData } = supabase.storage
+      .from('drinks_images')
+      .getPublicUrl(filePath);
+
+    const publicUrl = publicUrlData?.publicUrl;
+    console.log('Upload bem-sucedido! URL:', publicUrl);
+
+    return publicUrl || null;
+  } catch (err: any) {
+    console.error('Erro no upload de imagem:', err);
+    return null;
+  }
+}
+
+/**
+ * Deletar imagem de bebida do Supabase Storage
+ * @param filePath Caminho completo do arquivo (ex: drinks/drink123/image.jpg)
+ * @returns true se sucesso, false se erro
+ */
+export async function deleteDrinkImage(filePath: string): Promise<boolean> {
+  if (!supabase) {
+    console.warn('Supabase não está configurado. Delete de imagem não disponível.');
+    return false;
+  }
+
+  try {
+    if (!filePath) return false;
+
+    console.log(`Deletando ${filePath}...`);
+
+    const { error } = await supabase.storage
+      .from('drinks_images')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Erro ao deletar imagem:', error);
+      return false;
+    }
+
+    console.log('Imagem deletada com sucesso!');
+    return true;
+  } catch (err: any) {
+    console.error('Erro ao deletar imagem:', err);
+    return false;
+  }
+}
+
+/**
+ * Extrair file path de uma URL pública de imagem
+ * Útil para deletar imagens usando apenas a URL pública
+ * @param publicUrl URL pública completa
+ * @returns File path ou null
+ */
+export function extractFilePathFromUrl(publicUrl: string): string | null {
+  try {
+    // URL formato: https://xxxxx.supabase.co/storage/v1/object/public/drinks_images/drinks/drinkId/filename
+    const parts = publicUrl.split('/drinks_images/');
+    if (parts.length > 1) {
+      return 'drinks_images/' + parts[1];
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// =============== END SUPABASE STORAGE ===============
+
 // ---------------- UserAccounts Entity Model ----------------
 
 export interface UserAccount {

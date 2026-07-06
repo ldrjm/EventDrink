@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { AppControllerType } from '../controllers/AppController';
 import { Language, Drink, PastOrder, StockMovement, Supplier, AuditLog, Coupon, SystemNotification } from '../types';
+import { uploadDrinkImage, deleteDrinkImage, extractFilePathFromUrl } from '../models/SupabaseModel';
 
 interface ViewProps {
   lang: Language;
@@ -101,6 +102,10 @@ export function AdminStockView({ lang, triggerToast, controller }: ViewProps) {
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
   const [alertFilter, setAlertFilter] = useState<'all' | 'low_stock' | 'expiring'>('all');
+
+  // Image Upload states
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem('eventdrink_suppliers', JSON.stringify(suppliers));
@@ -174,6 +179,65 @@ export function AdminStockView({ lang, triggerToast, controller }: ViewProps) {
     setEditingDrink(null);
     resetForm();
     triggerToast(isPt ? 'Produto atualizado no estoque!' : 'Product updated in stock!');
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      // Mostrar preview local
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Fazer upload para Supabase
+      const drinkId = editingDrink?.id || `d_${Date.now()}`;
+      const uploadedUrl = await uploadDrinkImage(file, drinkId);
+
+      if (uploadedUrl) {
+        setImageUrl(uploadedUrl);
+        triggerToast(isPt ? '✅ Imagem enviada com sucesso!' : '✅ Image uploaded successfully!');
+      } else {
+        triggerToast(isPt ? '❌ Erro ao enviar imagem. Tente novamente.' : '❌ Error uploading image. Try again.');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      triggerToast(isPt ? '❌ Erro no upload: ' + String(err) : '❌ Upload error: ' + String(err));
+    } finally {
+      setUploadingImage(false);
+      // Limpar input
+      e.target.value = '';
+    }
+  };
+
+  // Handle delete image
+  const handleDeleteImage = async () => {
+    if (!imageUrl) return;
+
+    const isConfirmed = window.confirm(isPt ? 'Tem certeza que deseja deletar esta imagem?' : 'Are you sure you want to delete this image?');
+    if (!isConfirmed) return;
+
+    try {
+      const filePath = extractFilePathFromUrl(imageUrl);
+      if (filePath) {
+        const success = await deleteDrinkImage(filePath);
+        if (success) {
+          setImageUrl('https://images.unsplash.com/photo-1545696911-30f376a7e449?auto=format&fit=crop&w=600&q=80');
+          setImagePreview(null);
+          triggerToast(isPt ? '✅ Imagem deletada com sucesso!' : '✅ Image deleted successfully!');
+        } else {
+          triggerToast(isPt ? '❌ Erro ao deletar imagem.' : '❌ Error deleting image.');
+        }
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      triggerToast(isPt ? '❌ Erro ao deletar: ' + String(err) : '❌ Delete error: ' + String(err));
+    }
   };
 
   // Adjust stock quantity manual
@@ -530,15 +594,66 @@ export function AdminStockView({ lang, triggerToast, controller }: ViewProps) {
                 />
               </div>
 
-              <div className="space-y-1.5 text-left font-mono">
-                <label className="text-[10px] font-mono text-neutral-500 uppercase font-bold">{isPt ? 'Imagem do Produto (URL)' : 'Product Image URL'}</label>
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                />
+              <div className="space-y-1.5 text-left font-mono md:col-span-3">
+                <label className="text-[10px] font-mono text-neutral-500 uppercase font-bold">{isPt ? '🖼️ Imagem do Produto' : '🖼️ Product Image'}</label>
+                
+                {/* Preview da Imagem */}
+                {(imageUrl || imagePreview) && (
+                  <div className="relative w-full h-32 bg-neutral-950 border border-neutral-850 rounded-xl overflow-hidden mb-2">
+                    <img 
+                      src={imagePreview || imageUrl} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleDeleteImage}
+                      className="absolute top-2 right-2 bg-red-500/90 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-red-600"
+                    >
+                      {isPt ? 'Deletar' : 'Delete'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Tabs: URL vs Upload */}
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  {/* URL Input */}
+                  <div>
+                    <label className="text-[9px] font-mono text-neutral-600 block mb-1">{isPt ? 'Cola URL da Imagem' : 'Paste Image URL'}</label>
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  {/* File Upload */}
+                  <div>
+                    <label className="text-[9px] font-mono text-neutral-600 block mb-1">{isPt ? 'Ou Faça Upload' : 'Or Upload File'}</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                        className="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-black hover:file:bg-amber-600 disabled:opacity-50"
+                      />
+                      {uploadingImage && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500">
+                          <span className="text-xs font-bold animate-spin">⟳</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-neutral-600 font-mono">
+                  {isPt 
+                    ? '💡 Máx 5MB. Formatos: JPG, PNG, WebP, GIF. Ou use URL de imagem pública.'
+                    : '💡 Max 5MB. Formats: JPG, PNG, WebP, GIF. Or paste any public image URL.'}
+                </p>
               </div>
 
               <div className="space-y-1.5 text-left font-mono">
