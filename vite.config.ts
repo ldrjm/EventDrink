@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    root: 'src',
     base: '/EventDrink/',
     plugins: [react(), tailwindcss()],
     resolve: {
@@ -13,11 +14,10 @@ export default defineConfig(() => {
       },
     },
     build: {
-      outDir: 'docs',
+      outDir: path.resolve(__dirname, 'docs'),
       target: 'es2015',
       emptyOutDir: true,
       rollupOptions: {
-        input: 'src/index.html',
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined;
