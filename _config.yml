@@ -1,14 +1,5 @@
 # GitHub Pages configuration
 theme: null
 plugins: []
-exclude:
-  - node_modules
-  - .git
-  - .github
-  - src
-  - cypress
-  - vite.config.ts
-  - tsconfig.json
-  - package.json
-  - package-lock.json
-  - README.md
+# Serve from docs directory
+
