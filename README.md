@@ -1,10 +1,10 @@
-# EventDrink Pro v4.0 🍹✨
+# EventDrink Pro v4.0 
 
 O EventDrink Pro é um sofisticado calculador de bebidas e gerenciador de inventário para reuniões e eventos (full-stack), projetado para anfitriões premium e organizadores de eventos. O sistema oferece matrizes de planejamento inteligentes, um painel dinâmico de receitas de coquetéis, ferramentas personalizadas para criação de bebidas e recursos administrativos completos.
 
 ---
 
-## 🏗️ Divisão da Arquitetura MVC (Requisitos Técnicos Obrigatórios)
+##  Divisão da Arquitetura MVC (Requisitos Técnicos Obrigatórios)
 
 Para cumprir com os rigorosos padrões arquiteturais de nível de produção, a aplicação implementa o padrão de design limpo **Model-View-Controller (MVC)**:
 
@@ -22,7 +22,7 @@ Para cumprir com os rigorosos padrões arquiteturais de nível de produção, a 
 
 ---
 
-## 🌟 Principais Recursos
+##  Principais Recursos
 
 * **Calculadora Inteligente de Líquidos**: Insira a quantidade de convidados, a duração e o perfil de consumo para obter estimativas matematicamente precisas de cervejas, chopps, vinhos, espumantes, refrigerantes e gelo.
 * **Canais VIP Exclusivos**: Acesso restrito para membros VIP e Administradores para baixar checklists avançados, assistir a videoaulas de masterclass e visualizar fórmulas exclusivas de receitas de vanguarda.
@@ -35,7 +35,7 @@ Para cumprir com os rigorosos padrões arquiteturais de nível de produção, a 
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+##  Tecnologias Utilizadas
 
 * **Frontend**: React 19 + TypeScript + Vite
 * **Animações**: Motion (`motion/react`)
@@ -46,7 +46,7 @@ Para cumprir com os rigorosos padrões arquiteturais de nível de produção, a 
 
 ---
 
-## 🔐 Variáveis de Ambiente (`.env`)
+##  Variáveis de Ambiente (`.env`)
 
 Para máxima segurança, os segredos de API e links do backend são parametrizados usando arquivos de ambiente. As variáveis documentadas no arquivo `.env.example` incluem:
 
@@ -58,14 +58,14 @@ Para executar localmente, copie `.env.example` para `.env` e preencha as variáv
 
 ---
 
-## ♿ Acessibilidade & Responsividade
+##  Acessibilidade & Responsividade
 
 * **Acessibilidade**: Implementa tags `htmlFor` explícitas em rótulos (labels) correspondentes a IDs únicos de elementos de entrada, contraste de cor adequado entre texto e fundo, atributos `alt` explícitos em imagens e navegação sequencial por teclado (tabulação).
 * **Responsividade**: Layout totalmente fluido que se adapta a monitores desktop ultra-wide, laptops compactos e menus hambúrguer responsivos em smartphones.
 
 ---
 
-## 🧪 Suíte de Testes E2E (Cypress)
+## Suíte de Testes E2E (Cypress)
 
 Implementamos testes E2E validando as principais operações administrativas de CRUD.
 
@@ -92,7 +92,7 @@ Contas de teste criadas pelo seed:
 
 ---
 
-## ✅ Checklist Rápido Pré-Deploy
+##  Checklist Rápido Pré-Deploy
 
 - Garanta que `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estejam configurados como secrets no CI/CD.
 - Não versionar `.env` (use `.env.example` como referência).
@@ -168,4 +168,4 @@ CREATE POLICY "Users can manage their row" ON public.user_accounts
 4) Sobre o fallback local:
 - `src/models/SupabaseModel.ts` contém mensagens DDL de referência para facilitar a criação das tabelas no painel SQL do Supabase. Remova o usuário seed antes de subir em produção real.
 
-Se quiser, eu gero um arquivo `supabase/ddl.sql` com todas as instruções necessárias adaptadas ao seu schema atual.
+
