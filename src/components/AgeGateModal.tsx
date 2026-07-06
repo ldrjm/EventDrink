@@ -37,7 +37,7 @@ export default function AgeGateModal({ lang, onVerified }: AgeGateModalProps) {
     } else {
       setIsOpen(true);
     }
-  }, [onVerified]);
+  }, []);
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();

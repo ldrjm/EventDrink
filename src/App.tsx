@@ -130,6 +130,11 @@ export default function App() {
     triggerToast
   } = controller;
 
+  // Memoize callbacks to prevent infinite re-renders
+  const handleAgeVerified = React.useCallback(() => {
+    controller.setAgeVerified(true);
+  }, [controller]);
+
   // Sync route so ADMIN is locked inside the Admin Console,
   // preventing them from seeing the client menus as per user instructions
   React.useEffect(() => {
@@ -158,7 +163,7 @@ export default function App() {
         />
         <AgeGateModal
           lang={lang}
-          onVerified={() => controller.setAgeVerified(true)}
+          onVerified={handleAgeVerified}
         />
       </div>
     );
@@ -771,7 +776,7 @@ export default function App() {
       {/* Verificação de Maioridade (Age Gate) */}
       <AgeGateModal
         lang={lang}
-        onVerified={() => controller.setAgeVerified(true)}
+        onVerified={handleAgeVerified}
       />
     </div>
   );
