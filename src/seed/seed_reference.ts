@@ -1,0 +1,483 @@
+import { Drink, PastOrder, PlanejamentoInputs, SuggestedQuantity, EventType, ConsumptionProfile } from '../types';
+import craftIpaBoxImage from '../assets/images/craft_ipa_box_1781495588095.jpg';
+import aguaPedrasPremiumImage from '../assets/images/agua_pedras_premium_1781495737232.jpg';
+import pilsenBeerImage from '../assets/images/pilsen_beer_1781915102635.jpg';
+import redWineBottleImage from '../assets/images/red_wine_bottle_1781915117883.jpg';
+import whiteWineBottleImage from '../assets/images/white_wine_bottle_1781915133154.jpg';
+import sparklingWineBottleImage from '../assets/images/sparkling_wine_bottle_1781915143116.jpg';
+import vodkaSpiritBottleImage from '../assets/images/vodka_spirit_bottle_1781915156121.jpg';
+import ginTonicGlassImage from '../assets/images/gin_tonic_glass_1781915165098.jpg';
+import whiskyGlassImage from '../assets/images/whisky_glass_1781915175904.jpg';
+import zeroBeerBottleImage from '../assets/images/zero_beer_bottle_1781915189484.jpg';
+import sodaCansMixImage from '../assets/images/soda_cans_mix_1781915199753.jpg';
+import grapeJuiceBottleImage from '../assets/images/grape_juice_bottle_1781915209160.jpg';
+import energyDrinkCanImage from '../assets/images/energy_drink_can_1781915220310.jpg';
+import stillWaterBottleImage from '../assets/images/still_water_bottle_1781915231397.jpg';
+import iceCubesBagImage from '../assets/images/ice_cubes_bag_1781915242095.jpg';
+
+export const DRINKS: Drink[] = [];
+
+export const PAST_ORDERS: PastOrder[] = [];
+
+export function calculatePlanejamento(inputs: PlanejamentoInputs): {
+  items: SuggestedQuantity[];
+  subtotal: number;
+  discount: number;
+  total: number;
+} {
+  const { eventType, duration, drinkersCount, nonDrinkersCount } = inputs;
+  const guests = drinkersCount + nonDrinkersCount;
+
+  // Let's create an elegant baseline calculator corresponding to different event types:
+  let modifierAlcohol = 1.0;
+  let modifierNonAlcohol = 1.0;
+
+  if (eventType === 'aniversario') {
+    modifierAlcohol = 1.35;
+    modifierNonAlcohol = 1.1;
+  } else if (eventType === 'reuniao') {
+    modifierAlcohol = 0.45;
+    modifierNonAlcohol = 1.4;
+  } else if (eventType === 'casual') {
+    modifierAlcohol = 1.0;
+    modifierNonAlcohol = 1.0;
+  } else {
+    modifierAlcohol = 0.9;
+    modifierNonAlcohol = 1.0;
+  }
+
+  // Read safety margin, weather insights and default host profile from localStorage
+  let safetyMarginPercent = 10; // Default standard margin
+  let enableWeatherInsights = 'no'; // Default: off
+  let defaultProfile = 'moderate'; // Default profile
+  try {
+    const savedMargin = localStorage.getItem('eventdrink_safety_margin');
+    if (savedMargin) {
+      safetyMarginPercent = parseInt(savedMargin, 10);
+    }
+    const savedWeather = localStorage.getItem('eventdrink_weather_insights');
+    if (savedWeather) {
+      enableWeatherInsights = savedWeather;
+    }
+    const savedProfile = localStorage.getItem('eventdrink_default_profile');
+    if (savedProfile) {
+      defaultProfile = savedProfile;
+    }
+  } catch (e) {}
+
+  // Apply default profile modifiers
+  let wineMultiplier = 1.0;
+  let beerMultiplier = 1.0;
+
+  if (defaultProfile === 'basic') {
+    modifierAlcohol *= 0.60;
+    modifierNonAlcohol *= 1.30;
+  } else if (defaultProfile === 'intense') {
+    modifierAlcohol *= 1.35;
+  } else if (defaultProfile === 'sophisticated') {
+    modifierAlcohol *= 1.10;
+    wineMultiplier = 1.40;
+    beerMultiplier = 0.70;
+  }
+
+  const safetyMultiplier = 1 + (safetyMarginPercent / 100);
+  
+  let iceMultiplier = 1.0;
+  if (enableWeatherInsights === 'yes') {
+    iceMultiplier = 1.20; // AI Satellite Sync
+  } else if (enableWeatherInsights === 'manual_hot') {
+    iceMultiplier = 1.10; // Manual hot weather preset (+10% ice/water)
+  }
+
+  // Adjust by duration (standard baseline assumes 6 hours)
+  const durationModifier = duration / 6;
+  
+  // Calculate raw amounts with multipliers applied
+  const beers = Math.round(drinkersCount * 1.8 * durationModifier * modifierAlcohol * safetyMultiplier * beerMultiplier);
+  const wines = Math.round(drinkersCount * 0.4 * durationModifier * modifierAlcohol * safetyMultiplier * wineMultiplier);
+  const spirits = drinkersCount > 0 ? Math.max(1, Math.round(drinkersCount * 0.1 * durationModifier * modifierAlcohol * safetyMultiplier)) : 0;
+  
+  const sodas = Math.round((drinkersCount * 0.8 + nonDrinkersCount * 1.8) * durationModifier * modifierNonAlcohol * safetyMultiplier);
+  const water = Math.round((drinkersCount * 0.9 + nonDrinkersCount * 1.6) * durationModifier * modifierNonAlcohol * safetyMultiplier);
+  const ice = Math.max(2, Math.round(guests * 0.15 * durationModifier * modifierNonAlcohol * safetyMultiplier * iceMultiplier));
+
+  // Dynamic products
+  const suggested: SuggestedQuantity[] = [
+    {
+      id: 'cerveja',
+      namePt: 'Cervejas',
+      nameEn: 'Beers',
+      value: beers,
+      unitPt: 'Garrafas (Pilsen Premium 355ml)',
+      unitEn: 'Bottles (Premium Pilsen 355ml)',
+      icon: 'sports_bar',
+      descPt: beers > 0 ? 'Cálculo de ' + Math.ceil(beers / 12) + ' caixas sugeridas de long neck.' : 'Sem consumo de álcool.',
+      descEn: beers > 0 ? 'Estimated ' + Math.ceil(beers / 12) + ' suggested crates of long neck.' : 'No alcohol consumption.',
+      approxPriceUnit: 8.50
+    },
+    {
+      id: 'vinho',
+      namePt: 'Vinhos',
+      nameEn: 'Wines',
+      value: wines,
+      unitPt: 'Garrafas (Tinto Seco Reserva 750ml)',
+      unitEn: 'Bottles (Reserve Dry Red 750ml)',
+      icon: 'wine_bar',
+      descPt: wines > 0 ? 'Estilizados e armazenados em adegas climatizadas.' : 'Sem consumo de álcool.',
+      descEn: wines > 0 ? 'Stylized and stored in climate-controlled cellars.' : 'No alcohol consumption.',
+      approxPriceUnit: 69.00
+    },
+    {
+      id: 'gelo',
+      namePt: 'Sacos de Gelo',
+      nameEn: 'Bags of Ice',
+      value: ice,
+      unitPt: 'Sacos (Gelo em Cubos 5kg)',
+      unitEn: 'Bags (Cubic Ice 5kg)',
+      icon: 'ac_unit',
+      descPt: 'Ideal para resfriar bebidas e servir em copos.',
+      descEn: 'Perfect for chilling drinks and serving in tumblers.',
+      approxPriceUnit: 12.00
+    },
+    {
+      id: 'vodka',
+      namePt: 'Vodkas',
+      nameEn: 'Spirits (Vodka)',
+      value: spirits,
+      unitPt: 'Garrafas (Importada 750ml)',
+      unitEn: 'Bottles (Imported Vodka 750ml)',
+      icon: 'liquor',
+      descPt: spirits > 0 ? 'Destilado premium importado de alta pureza.' : 'Sem consumo de álcool.',
+      descEn: spirits > 0 ? 'High purity premium imported spirit.' : 'No alcohol consumption.',
+      approxPriceUnit: 98.00
+    },
+    {
+      id: 'reco',
+      namePt: 'Refrigerantes',
+      nameEn: 'Sodas / Soft Drinks',
+      value: sodas,
+      unitPt: 'Latas (Variados 350ml)',
+      unitEn: 'Cans (Assorted 350ml)',
+      icon: 'local_cafe',
+      descPt: 'Latas de Coca-Cola, Guaraná e água tônica.',
+      descEn: 'Cans of Cola, Guaraná and tonic water.',
+      approxPriceUnit: 5.00
+    },
+    {
+      id: 'agua',
+      namePt: 'Águas',
+      nameEn: 'Water Bottles',
+      value: water,
+      unitPt: 'Garrafas (Sem Gás 500ml)',
+      unitEn: 'Bottles (Still Mineral 500ml)',
+      icon: 'water_drop',
+      descPt: 'Garante hidratação impecável de todos convidados.',
+      descEn: 'Ensures perfect hydration for all your guests.',
+      approxPriceUnit: 3.00
+    }
+  ];
+
+  // Calculate Subtotal dynamically
+  let calculatedSubtotal = 0;
+  suggested.forEach(item => {
+    calculatedSubtotal += item.value * item.approxPriceUnit;
+  });
+
+  // Round subtotal to look professional
+  calculatedSubtotal = Math.round(calculatedSubtotal);
+
+  const discount = Math.round(calculatedSubtotal * 0.07); // ~7% discount
+  const total = calculatedSubtotal - discount;
+
+  return {
+    items: suggested,
+    subtotal: calculatedSubtotal,
+    discount,
+    total
+  };
+}
+
+export const TRANSLATIONS = {
+  'pt-BR': {
+    appName: 'EventDrink Pro',
+    premiumPlanning: 'Premium Planning',
+    tagline: 'Planejamento Premium',
+    dashboard: 'Dashboard',
+    cart: 'Carrinho',
+    events: 'Eventos',
+    inventory: 'Inventário',
+    analytics: 'Análises',
+    settings: 'Configurações',
+    help: 'Ajuda',
+    logout: 'Sair',
+    newEventBtn: 'Novo Evento',
+    controlPanel: 'Painel de Controle',
+    searchPlaceholder: 'Buscar eventos...',
+    welcomeHost: 'Bem-vindo, Anfitrião!',
+    heroDesc: 'Sua jornada no EventDrink começa agora. Gerencie seus inventários, acompanhe o engajamento da galera e crie experiências inesquecíveis.',
+    startNewPlanning: 'Começar Novo Planejamento',
+    viewQuickGuide: 'Ver Guia Rápido',
+    drinkOfTheMonth: 'Drink do Mês',
+    oldFashionedTitle: 'Old Fashioned Revitalized',
+    oldFashionedDesc: 'A nossa versão exclusiva utiliza Bourbon selecionado e um toque secreto de sálvia defumada. O favorito dos convidados no último mês.',
+    popularity: 'POPULARIDADE',
+    orders: 'PEDIDOS',
+    addToMenu: 'Adicionar ao Menu',
+    estimatedStock: 'Estoque Estimado',
+    bottles: 'Garrafas',
+    upcoming: 'Próximos',
+    expectedGuests: 'Convidados Previstos',
+    people: 'Pessoas',
+    distributedEvents: 'Distribuídos em 5 eventos ativos',
+    myActiveEvents: 'Meus Eventos Ativos',
+    viewAll: 'Ver Todos',
+    ongoing: 'EM ANDAMENTO',
+    awaiting: 'AGUARDANDO',
+    createNewEvent: 'Criar Novo Evento',
+    galeraInsights: 'Insights da Galera',
+    nightFavorite: 'Favorito da Noite',
+    peakDemand: 'Pico de Demanda',
+    averageFeedback: 'Feedback Médio',
+    generatedSavings: 'Economia Gerada',
+
+    // Assistant Translate
+    assistantTitle: 'Qual o seu evento hoje?',
+    assistantDesc: 'Calcule drinks, combos e suprimentos com precisão cirúrgica. Transforme sua festa em uma experiência memorável com curadoria premium.',
+    calcRealTime: 'Cálculo em Tempo Real',
+    labelsPremium: '+500 Rótulos Premium',
+    stepMood: 'Mood',
+    stepScale: 'Escala',
+    stepLogistics: 'Logística',
+    formEventType: 'TIPO DE EVENTO',
+    optWedding: 'Casamento',
+    optCorporate: 'Corporativo',
+    optSocial: 'Social',
+    optIntense: 'Festa Intensa',
+    formGuests: 'CONVIDADOS',
+    minGuest: '1 CONVIDADO',
+    maxGuest: '500 CONVIDADOS',
+    formDuration: 'DURAÇÃO (HORAS)',
+    hours: 'Horas',
+    formConsumption: 'CONSUMO',
+    consumptionMod: 'Moderado',
+    consumptionInt: 'Intenso',
+    calcNowBtn: 'CALCULAR AGORA',
+    futureTitle: 'O Futuro do Planejamento',
+
+    // Results Translate
+    perfectPlanReady: 'Seu plano de Festa Perfeita está pronto.',
+    calculatedFor: 'Calculado para {guests} convidados por {hours} horas. Utilizamos o menu {menu} para uma experiência concierge impecável.',
+    suggestedQuantities: 'Quantidades Sugeridas',
+    optimizedAlgorithm: 'ALGORITMO OTIMIZADO',
+    estimatedInvestment: 'Investimento Estimado',
+    subtotalProducts: 'Subtotal de Produtos',
+    scheduledDelivery: 'Entrega Agendada',
+    freeBadge: 'CORTESIA',
+    loyaltyDiscount: 'Desconto de Fidelidade',
+    projectTotal: 'TOTAL DO PROJETO',
+    confirmPlanningBtn: 'Confirmar Planejamento',
+    subjectToStock: 'PREÇOS SUJEITOS A ALTERAÇÃO DE ESTOQUE',
+    conciergeInsightTitle: 'Concierge Insight',
+    weatherTip: '"Com base na previsão do tempo para sua data, sugerimos elevar o estoque de gelo em 20% para garantir o serviço perfeito."',
+
+    // Menu Translate
+    beverageMenu: 'Menu de Bebidas',
+    menuDesc: 'Explore nossa curadoria premium de bebidas selecionadas para elevar a experiência do seu evento. Harmonização inteligente sugerida para cada ocasião.',
+    categories: 'CATEGORIAS',
+    all: 'Todas',
+    beers: 'Cervejas',
+    wines: 'Vinhos',
+    spirits: 'Destilados',
+    nonAlcoholic: 'Sem Álcool',
+    activeTags: 'Tags Ativas:',
+    priceRange: 'Faixa de Preço',
+    clearFilters: 'Limpar Filtros',
+    expertRecommends: 'Especialista Recomenda',
+    upsellTitle: 'Kit Botânicos Premium',
+    upsellDesc: 'Eleve seu Premium London Dry Gin com nosso kit exclusivo de botânicos selecionados. Perfeito para realçar notas cítricas e herbais.',
+    addBoth: 'Adicionar Ambos',
+    noThanks: 'Não, obrigado',
+    suggestedPrice: 'Preço Sugerido',
+    paginationPage: 'Página',
+    paginationOf: 'de',
+    floatingBudget: 'Orçamento Estimado',
+    viewOrder: 'Ver Pedido',
+    pairingLabel: 'HARMONIZAÇÃO',
+
+    // History Translate
+    successJourney: 'Sua Jornada de Sucesso',
+    journeyDesc: 'Insights consolidados de todos os seus eventos',
+    allTime: 'Todo o Tempo',
+    totalDrinksServed: 'Total de Drinks Servidos',
+    mostLovedDrink: 'Drink Mais Amado',
+    popularityPeak: 'Pico de Popularidade',
+    totalSpent: 'TOTAL GASTO',
+    totalSpentDesc: '+12% desde o mês passado',
+    eventsHosted: 'EVENTOS REALIZADOS',
+    eventsHostedDesc: '4 Pacotes Premium',
+    quickReplenish: 'REPOSIÇÃO RÁPIDA',
+    nextCelebration: 'Próxima Celebração?',
+    reuseSetup: 'Reutilize suas configurações favoritas com um clique.',
+    pastEvents: 'Eventos Passados',
+    filter: 'Filtrar',
+    export: 'Exportar',
+    reorder: 'Reordenar',
+    viewDetails: 'Ver Detalhes',
+    status: 'Status',
+    delivered: 'Entregue',
+    processing: 'Em Processamento',
+    economyOf: 'Economia de R$ {val}',
+    awaitingReview: 'AGUARDANDO AVALIAÇÃO',
+
+    // Help & FAQ Translation
+    faqTitle: 'Central de Ajuda & Guia Rápido',
+    faqSubtitle: 'Esclareça suas dúvidas sobre a gestão premium de bebidas da EventDrink Pro',
+    faq1: 'Como funciona o cálculo inteligente?',
+    ans1: 'Nosso algoritmo de Inteligência Computacional ajusta proporções de fornecimento de acordo com a duração do evento, as preferências de consumo, temperatura externa estimada e estatísticas reais de mais de 10.000 festas realizadas.',
+    faq2: 'Qual a política de entrega e devolução?',
+    ans2: 'Oferecemos entrega programada premium totalmente cortes como parte de nosso serviço concierge. Garrafas lacradas e não refrigeradas podem ser devolvidas com 100% de reembolso corporativo pós-evento.',
+    faq3: 'É possível personalizar as bebidas do combo sugerido?',
+    ans3: 'Sim! Na tela de resultados de planejamento você tem total flexibilidade para aumentar, diminuir ou remover itens individuais da lista de compras.'
+  },
+  'en': {
+    appName: 'EventDrink Pro',
+    premiumPlanning: 'Premium Planning',
+    tagline: 'Premium Planning',
+    dashboard: 'Dashboard',
+    cart: 'Cart',
+    events: 'Events',
+    inventory: 'Inventory',
+    analytics: 'Analytics',
+    settings: 'Settings',
+    help: 'Help',
+    logout: 'Log Out',
+    newEventBtn: 'New Event',
+    controlPanel: 'Host Dashboard',
+    searchPlaceholder: 'Search events...',
+    welcomeHost: 'Welcome, Host!',
+    heroDesc: 'Your journey with EventDrink starts now. Manage your inventory, track guest engagement, and create unforgettable experiences.',
+    startNewPlanning: 'Start New Planning',
+    viewQuickGuide: 'View Quick Guide',
+    drinkOfTheMonth: 'Drink of the Month',
+    oldFashionedTitle: 'Old Fashioned Revitalized',
+    oldFashionedDesc: 'Our exclusive version uses selected Bourbon and a secret touch of smoked sage. A guest favorite in the last month.',
+    popularity: 'POPULARITY',
+    orders: 'ORDERS',
+    addToMenu: 'Add to Menu',
+    estimatedStock: 'Estimated Stock',
+    bottles: 'Bottles',
+    upcoming: 'Upcoming',
+    expectedGuests: 'Expected Guests',
+    people: 'People',
+    distributedEvents: 'Distributed across 5 active events',
+    myActiveEvents: 'My Active Events',
+    viewAll: 'View All',
+    ongoing: 'ONGOING',
+    awaiting: 'PENDING',
+    createNewEvent: 'Create New Event',
+    galeraInsights: 'Gallery Insights',
+    nightFavorite: 'Nightly Favorite',
+    peakDemand: 'Peak Demand',
+    averageFeedback: 'Average Feedback',
+    generatedSavings: 'Generated Savings',
+
+    // Assistant Translate
+    assistantTitle: 'What is your event today?',
+    assistantDesc: 'Calculate drinks, combos and supplies with surgical precision. Turn your party into a memorable experience with premium curation.',
+    calcRealTime: 'Real-Time Calculation',
+    labelsPremium: '+500 Premium Labels',
+    stepMood: 'Mood',
+    stepScale: 'Scale',
+    stepLogistics: 'Logistics',
+    formEventType: 'EVENT TYPE',
+    optWedding: 'Wedding',
+    optCorporate: 'Corporate',
+    optSocial: 'Social',
+    optIntense: 'Intense Party',
+    formGuests: 'GUESTS',
+    minGuest: '1 GUEST',
+    maxGuest: '500 GUESTS',
+    formDuration: 'DURATION (HOURS)',
+    hours: 'Hours',
+    formConsumption: 'CONSUMPTION',
+    consumptionMod: 'Moderate',
+    consumptionInt: 'Intense',
+    calcNowBtn: 'CALCULATE NOW',
+    futureTitle: 'The Future of Planning',
+
+    // Results Translate
+    perfectPlanReady: 'Your Perfect Party plan is ready.',
+    calculatedFor: 'Calculated for {guests} guests for {hours} hours. We use the {menu} menu for an impeccable, premium concierge experience.',
+    suggestedQuantities: 'Suggested Quantities',
+    optimizedAlgorithm: 'OPTIMIZED ALGORITHM',
+    estimatedInvestment: 'Estimated Investment',
+    subtotalProducts: 'Products Subtotal',
+    scheduledDelivery: 'Scheduled Delivery',
+    freeBadge: 'FREE',
+    loyaltyDiscount: 'Loyalty Discount',
+    projectTotal: 'PROJECT TOTAL',
+    confirmPlanningBtn: 'Confirm Planning',
+    subjectToStock: 'PRICE SUBJECT TO INVENTORY AVAILABILITY',
+    conciergeInsightTitle: 'Concierge Insight',
+    weatherTip: '"Based on the weather forecast for your date, we suggest increasing the ice stock by 20% to guarantee perfect service."',
+
+    // Menu Translate
+    beverageMenu: 'Drinks Menu',
+    menuDesc: 'Explore our premium curation of selected drinks to elevate your event experience. Smart pairing suggested for every occasion.',
+    categories: 'CATEGORIES',
+    all: 'All',
+    beers: 'Beers',
+    wines: 'Wines',
+    spirits: 'Spirits',
+    nonAlcoholic: 'Non-Alcoholic',
+    activeTags: 'Active Status:',
+    priceRange: 'Price Range',
+    clearFilters: 'Clear Filters',
+    expertRecommends: 'Expert Recommends',
+    upsellTitle: 'Premium Botanicals Pack',
+    upsellDesc: 'Elevate your Premium London Dry Gin with our exclusive selected botanicals kit. Perfect for enhancing citrus and herbal notes.',
+    addBoth: 'Add Both',
+    noThanks: 'No, thanks',
+    suggestedPrice: 'Suggested Price',
+    paginationPage: 'Page',
+    paginationOf: 'of',
+    floatingBudget: 'Estimated Budget',
+    viewOrder: 'View Order',
+    pairingLabel: 'PAIRING',
+
+    // History Translate
+    successJourney: 'Your Success Journey',
+    journeyDesc: 'Consolidated insights from all your events',
+    allTime: 'All Time',
+    totalDrinksServed: 'Total Drinks Served',
+    mostLovedDrink: 'Most Loved Drink',
+    popularityPeak: 'Popularity Peak Time',
+    totalSpent: 'TOTAL SPENT',
+    totalSpentDesc: '+12% from last month',
+    eventsHosted: 'EVENTS HOSTED',
+    eventsHostedDesc: '4 Premium Packages',
+    quickReplenish: 'QUICK REPLENISH',
+    nextCelebration: 'Next Celebration?',
+    reuseSetup: 'Reuse your favorite setups with one single click.',
+    pastEvents: 'Past Events',
+    filter: 'Filter',
+    export: 'Export',
+    reorder: 'Reorder',
+    viewDetails: 'View Details',
+    status: 'Status',
+    delivered: 'Delivered',
+    processing: 'Processing',
+    economyOf: 'Saved ${val}',
+    awaitingReview: 'AWAITING EVALUATION',
+
+    // Help & FAQ Translation
+    faqTitle: 'Help Center & Quick Guide',
+    faqSubtitle: 'Clear your doubts about the premium drink management of EventDrink Pro',
+    faq1: 'How does the smart calculation work?',
+    ans1: 'Our computing algorithm adjusts supply ratios according to the duration of the event, consumption preferences, estimated outside temperature, and real data from more than 10,000 completed events.',
+    faq2: 'What is the delivery and return policy?',
+    ans2: 'We offer fully complimentary scheduled premium delivery as part of our concierge service. Sealed, non-refrigerated bottles can be returned for 100% refund post-event.',
+    faq3: 'Can I customize the drinks in the suggested combo?',
+    ans3: 'Yes! On the planning results screen, you have full flexibility to increase, decrease or remove individual items from your shopping list.'
+  }
+};

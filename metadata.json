@@ -1,0 +1,6 @@
+{
+  "name": "EventDrink Pro",
+  "description": "Plataforma premium para planejamento inteligente de bebidas, controle de estoque e curadoria em eventos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
