@@ -813,10 +813,30 @@ Calculation parameters: 1 wine bottle per 3 drinking guests, 1 liter of draft be
 }
 
 // 6. ADMIN CONFIGURATION VIEW
-export function AdminConfigView({ lang, triggerToast }: SubViewProps) {
+export function AdminConfigView({ lang, triggerToast, controller }: SubViewProps) {
   const isPt = lang === 'pt-BR';
-  const [maintenance, setMaintenance] = useState(false);
+  const maintenance = controller.maintenanceStatus;
+  const [warningMinutes, setWarningMinutes] = useState(10);
   const [debugLogs, setDebugLogs] = useState(true);
+  const [countdown, setCountdown] = useState<string>('');
+
+  useEffect(() => {
+    if (!maintenance.isScheduled || maintenance.scheduledFor === null) {
+      setCountdown('');
+      return;
+    }
+
+    const updateCountdown = () => {
+      const remaining = Math.max(0, maintenance.scheduledFor - Date.now());
+      const minutes = Math.floor(remaining / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      setCountdown(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    updateCountdown();
+    const intervalId = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [maintenance.isScheduled, maintenance.scheduledFor]);
 
   const handleWipeDatabase = () => {
     const isConfirmed = window.confirm(
@@ -852,20 +872,58 @@ export function AdminConfigView({ lang, triggerToast }: SubViewProps) {
         <div className="bg-neutral-950 border border-neutral-900 rounded-2xl p-6 space-y-4">
           <h4 className="text-xs font-mono font-bold text-neutral-500 uppercase tracking-wider">{isPt ? 'Chaves Operacionais' : 'Operational Switches'}</h4>
           
-          <div className="flex items-center justify-between py-2 border-b border-neutral-900">
-            <div className="text-left space-y-0.5">
-              <p className="text-xs font-bold text-white">{isPt ? 'Modo de Manutenção' : 'Maintenance Window'}</p>
-              <p className="text-[10px] text-neutral-500">{isPt ? 'Desativa o acesso de clientes e mostra tela de reparo.' : 'Block customer checkout during database backups.'}</p>
+          <div className="space-y-3 border-b border-neutral-900 py-2">
+            <div className="flex items-center justify-between">
+              <div className="text-left space-y-0.5">
+                <p className="text-xs font-bold text-white">{isPt ? 'Modo de Manutenção' : 'Maintenance Window'}</p>
+                <p className="text-[10px] text-neutral-500">{isPt ? 'Ativa o aviso para usuários ativos e, após o tempo escolhido, bloqueia o acesso.' : 'Warn active users first, then lock the site after the selected delay.'}</p>
+              </div>
+              <input 
+                type="checkbox"
+                checked={maintenance.isEnabled}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    controller.activateMaintenance(0);
+                    triggerToast(isPt ? 'Manutenção ativada imediatamente!' : 'Maintenance enabled immediately!');
+                  } else {
+                    controller.deactivateMaintenance();
+                    triggerToast(isPt ? 'Modo de manutenção desativado!' : 'Maintenance mode disabled!');
+                  }
+                }}
+                className="w-4 h-4 rounded border-neutral-800 accent-red-500 cursor-pointer"
+              />
             </div>
-            <input 
-              type="checkbox"
-              checked={maintenance}
-              onChange={(e) => {
-                setMaintenance(e.target.checked);
-                triggerToast(isPt ? 'Status de manutenção atualizado!' : 'Maintenance status updated!');
-              }}
-              className="w-4 h-4 rounded border-neutral-800 accent-red-500 cursor-pointer"
-            />
+
+            <div className="flex flex-col gap-2 rounded-xl border border-neutral-900 bg-neutral-950/70 p-3">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-neutral-500">
+                {isPt ? 'Avisar em X minutos' : 'Warn in X minutes'}
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={warningMinutes}
+                  onChange={(e) => setWarningMinutes(Number(e.target.value) || 1)}
+                  className="w-20 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    controller.activateMaintenance(warningMinutes);
+                    triggerToast(isPt ? `Aviso agendado para ${warningMinutes} minuto(s)!` : `Maintenance warning scheduled for ${warningMinutes} minute(s)!`);
+                  }}
+                  className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-red-500/20"
+                >
+                  {isPt ? 'Agendar aviso' : 'Schedule warning'}
+                </button>
+              </div>
+              {maintenance.isScheduled && countdown && (
+                <p className="text-[10px] text-amber-400">
+                  {isPt ? `Manutenção iniciará em ${countdown}` : `Maintenance will start in ${countdown}`}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-between py-2">

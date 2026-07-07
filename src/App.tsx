@@ -107,6 +107,48 @@ function AccessDeniedView({ lang, onGoHome }: { lang: 'pt-BR' | 'en'; onGoHome: 
 }
 
 // --- COMPONENTE PRINCIPAL DO EVENTDRINK PRO ---
+function MaintenanceView({ lang, onGoHome, title, description, countdownText }: { lang: 'pt-BR' | 'en'; onGoHome: () => void; title: string; description: string; countdownText?: string }) {
+  const isPt = lang === 'pt-BR';
+
+  return (
+    <div id="eventdrink-maintenance-screen" className="min-h-screen bg-[#0d0d0d] text-neutral-100 flex flex-col items-center justify-center px-6 py-12 font-sans selection:bg-[#fe9d00]/30 selection:text-white antialiased">
+      <div className="w-full max-w-xl rounded-3xl border border-red-500/30 bg-neutral-950/80 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 text-red-500">
+          <ShieldAlert className="h-10 w-10" />
+        </div>
+        <div className="space-y-3">
+          <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-red-400">
+            {isPt ? 'Evento em manutenção' : 'Site under maintenance'}
+          </p>
+          <h1 className="text-3xl font-black uppercase tracking-tight text-white">
+            {title}
+          </h1>
+          <p className="text-sm leading-7 text-neutral-400">
+            {description}
+          </p>
+        </div>
+        {countdownText && (
+          <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-center">
+            <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-amber-400">
+              {isPt ? 'Tempo restante' : 'Time remaining'}
+            </p>
+            <p className="mt-2 text-4xl font-black tracking-[0.2em] text-white">{countdownText}</p>
+          </div>
+        )}
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <button
+            id="maintenance-go-home-btn"
+            onClick={onGoHome}
+            className="rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            {isPt ? 'Tentar novamente mais tarde' : 'Try again later'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const controller = useAppController();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -178,6 +220,32 @@ export default function App() {
     }
   }, [activeTab]);
 
+  const maintenanceStatus = controller.maintenanceStatus;
+  const isMaintenanceMode = maintenanceStatus.isEnabled;
+  const isMaintenanceScheduled = maintenanceStatus.isScheduled;
+  const userRole = currentUser?.role || 'FREE';
+  const isAdmin = userRole === 'ADMIN';
+  const shouldShowMaintenance = (isMaintenanceMode || isMaintenanceScheduled) && !isAdmin;
+  const [countdownText, setCountdownText] = React.useState('');
+
+  React.useEffect(() => {
+    if (!isMaintenanceScheduled || maintenanceStatus.scheduledFor === null) {
+      setCountdownText('');
+      return;
+    }
+
+    const updateCountdown = () => {
+      const remaining = Math.max(0, maintenanceStatus.scheduledFor - Date.now());
+      const minutes = Math.floor(remaining / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      setCountdownText(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    updateCountdown();
+    const intervalId = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [isMaintenanceScheduled, maintenanceStatus.scheduledFor]);
+
   // --- SEGURANÇA REFORÇADA: AGE GATE BLOCKS EVERYTHING ---
   if (!controller.ageVerified) {
     return (
@@ -191,6 +259,31 @@ export default function App() {
         <AgeGateModal
           lang={lang}
           onVerified={handleAgeVerified}
+        />
+      </div>
+    );
+  }
+
+  if (shouldShowMaintenance) {
+    return (
+      <div id="eventdrink-pro-root" className="min-h-screen bg-[#0d0d0d] text-neutral-100 flex flex-col font-sans selection:bg-[#fe9d00]/30 selection:text-white antialiased">
+        <MaintenanceView
+          lang={lang}
+          onGoHome={() => {
+            setActiveTab('landing');
+            if (currentUser?.role === 'ADMIN') {
+              setActiveTab('admin-dashboard');
+            }
+          }}
+          title={isMaintenanceScheduled ? (lang === 'pt-BR' ? 'Manutenção programada' : 'Scheduled maintenance') : (lang === 'pt-BR' ? 'Voltamos logo' : 'We will be back shortly')}
+          countdownText={isMaintenanceScheduled ? countdownText : undefined}
+          description={isMaintenanceScheduled
+            ? (lang === 'pt-BR'
+              ? `Uma manutenção será iniciada em ${maintenanceStatus.warningMinutes} minuto(s). Por favor, salve seu trabalho e volte em breve.`
+              : `A maintenance window will begin in ${maintenanceStatus.warningMinutes} minute(s). Please save your work and return shortly.`)
+            : (lang === 'pt-BR'
+              ? 'O site está temporariamente indisponível enquanto ajustamos o ambiente. Assim que o administrador habilitar o modo normal, o acesso será restaurado.'
+              : 'The site is temporarily unavailable while we complete scheduled maintenance. Access will be restored as soon as the administrator turns normal mode back on.')}
         />
       </div>
     );
@@ -255,9 +348,7 @@ export default function App() {
 
   // Route characteristics
   const isAdminTab = activeTab === 'admin' || activeTab.startsWith('admin-');
-  const userRole = currentUser?.role || 'FREE';
   const isVip = userRole === 'VIP';
-  const isAdmin = userRole === 'ADMIN';
 
   // RENDER SECTIONS CORRESPONDING TO CHOSEN TAB
   const renderWorkspaceContent = () => {

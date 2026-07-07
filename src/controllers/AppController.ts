@@ -36,6 +36,37 @@ import {
   getUserAccounts
 } from '../models/SupabaseModel';
 
+type MaintenanceStatus = {
+  isEnabled: boolean;
+  isScheduled: boolean;
+  scheduledFor: number | null;
+  warningMinutes: number;
+};
+
+const defaultMaintenanceStatus: MaintenanceStatus = {
+  isEnabled: false,
+  isScheduled: false,
+  scheduledFor: null,
+  warningMinutes: 0,
+};
+
+const readMaintenanceStatus = (): MaintenanceStatus => {
+  try {
+    const saved = localStorage.getItem('eventdrink_maintenance_status');
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<MaintenanceStatus>;
+      return {
+        ...defaultMaintenanceStatus,
+        ...parsed,
+      };
+    }
+  } catch (e) {
+    console.warn('Não foi possível carregar o status de manutenção do localStorage.', e);
+  }
+
+  return defaultMaintenanceStatus;
+};
+
 export function useAppController() {
   // --- ESTADOS GLOBAIS DE IDIOMA E NAVEGAÇÃO ---
   // Define o idioma padrão da aplicação para Português (pt-BR)
@@ -317,6 +348,67 @@ export function useAppController() {
   const [ageVerified, setAgeVerified] = useState(() => {
     return localStorage.getItem('eventdrink_age_verified') === 'true';
   });
+
+  // --- MODO DE MANUTENÇÃO GLOBAL ---
+  const [maintenanceStatus, setMaintenanceStatus] = useState<MaintenanceStatus>(() => readMaintenanceStatus());
+
+  const activateMaintenance = (minutes: number) => {
+    const normalizedMinutes = Math.max(1, Math.floor(minutes || 1));
+    const nextStatus: MaintenanceStatus = {
+      isEnabled: false,
+      isScheduled: normalizedMinutes > 0,
+      scheduledFor: normalizedMinutes > 0 ? Date.now() + normalizedMinutes * 60_000 : null,
+      warningMinutes: normalizedMinutes,
+    };
+    setMaintenanceStatus(nextStatus);
+  };
+
+  const deactivateMaintenance = () => {
+    setMaintenanceStatus(defaultMaintenanceStatus);
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eventdrink_maintenance_status', JSON.stringify(maintenanceStatus));
+    } catch (e) {}
+
+    window.dispatchEvent(new Event('eventdrink-maintenance-changed'));
+  }, [maintenanceStatus]);
+
+  useEffect(() => {
+    const syncMaintenanceStatus = () => {
+      setMaintenanceStatus(readMaintenanceStatus());
+    };
+
+    window.addEventListener('storage', syncMaintenanceStatus);
+    window.addEventListener('eventdrink-maintenance-changed', syncMaintenanceStatus);
+
+    return () => {
+      window.removeEventListener('storage', syncMaintenanceStatus);
+      window.removeEventListener('eventdrink-maintenance-changed', syncMaintenanceStatus);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!maintenanceStatus.isScheduled || maintenanceStatus.isEnabled) {
+      return;
+    }
+
+    const checkMaintenanceSchedule = () => {
+      if (maintenanceStatus.scheduledFor && Date.now() >= maintenanceStatus.scheduledFor) {
+        setMaintenanceStatus(prev => ({
+          ...prev,
+          isEnabled: true,
+          isScheduled: false,
+          scheduledFor: null,
+        }));
+      }
+    };
+
+    checkMaintenanceSchedule();
+    const intervalId = window.setInterval(checkMaintenanceSchedule, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [maintenanceStatus.isScheduled, maintenanceStatus.isEnabled, maintenanceStatus.scheduledFor]);
 
   // --- NOVOS ESTADOS INTEGRADOS ---
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
@@ -1154,6 +1246,10 @@ export function useAppController() {
     // Advanced Integrated elements
     ageVerified,
     setAgeVerified,
+    maintenanceStatus,
+    isMaintenanceMode: maintenanceStatus.isEnabled,
+    activateMaintenance,
+    deactivateMaintenance,
     stockMovements,
     setStockMovements,
     coupons,
