@@ -24,6 +24,50 @@ export function getSupabaseStatus() {
   };
 }
 
+function isValidUuid(value: string | null | undefined): boolean {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function ensureUuid(value: string | null | undefined): string {
+  if (isValidUuid(value)) return value!;
+  const cryptoApi = globalThis.crypto as Crypto | undefined;
+  if (typeof cryptoApi?.randomUUID === 'function') {
+    return cryptoApi.randomUUID();
+  }
+  return `00000000-0000-4000-8000-${Math.floor(Math.random() * 0xFFFFFFFFFFFF).toString(16).padStart(12, '0')}`;
+}
+
+function toSupabaseDrinkPayload(drink: Drink, categoryId: string | null): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    id: ensureUuid(drink.id),
+    name_pt: drink.namePt,
+    name_en: drink.nameEn,
+    category_id: categoryId,
+    category_label_pt: drink.categoryLabelPt,
+    category_label_en: drink.categoryLabelEn,
+    price: drink.price,
+    image_url: drink.imageUrl,
+    recommended_pt: drink.recommendedPt ?? null,
+    recommended_en: drink.recommendedEn ?? null,
+    in_stock: drink.inStock,
+    unit_pt: drink.unitPt,
+    unit_en: drink.unitEn,
+    stock_quantity: drink.stockQuantity ?? 0,
+    min_stock_quantity: drink.minStockQuantity ?? 0,
+    purchase_price: drink.purchasePrice ?? 0,
+    supplier_id: null,
+    expiry_date: drink.expiryDate ?? null,
+    batch: drink.batch ?? null,
+    status: drink.status ?? 'active',
+  };
+
+  if (drink.supplier && isValidUuid(drink.supplier)) {
+    payload.supplier_id = drink.supplier;
+  }
+
+  return payload;
+}
+
 async function getCategoryIdBySlug(slug: string): Promise<string | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from('drink_categories').select('id').eq('slug', slug).maybeSingle();
@@ -104,7 +148,7 @@ function fromVipCourseRecord(row: any): VipCourse {
 
 function toDrinkRecord(drink: Drink) {
   return {
-    id: drink.id,
+    id: ensureUuid(drink.id),
     name_pt: drink.namePt,
     name_en: drink.nameEn,
     category: drink.category,
@@ -120,7 +164,7 @@ function toDrinkRecord(drink: Drink) {
     stock_quantity: drink.stockQuantity ?? 0,
     min_stock_quantity: drink.minStockQuantity ?? 0,
     purchase_price: drink.purchasePrice ?? 0,
-    supplier: drink.supplier,
+    supplier: drink.supplier && isValidUuid(drink.supplier) ? drink.supplier : null,
     expiry_date: drink.expiryDate,
     batch: drink.batch,
     status: drink.status ?? 'active',
@@ -198,7 +242,7 @@ function fromOrderRecord(row: any): PastOrder {
 
 function toStockMovementRecord(movement: StockMovement) {
   return {
-    id: movement.id,
+    id: ensureUuid(movement.id),
     drink_id: movement.drinkId,
     drink_name_pt: movement.drinkNamePt,
     quantity: movement.quantity,
@@ -799,18 +843,23 @@ export async function getDrinks(): Promise<Drink[]> {
 }
 
 export async function insertDrink(drink: Drink): Promise<Drink> {
+  const normalizedDrink: Drink = { ...drink, id: ensureUuid(drink.id) };
   const local = getLocalDrinks();
-  local.push(drink);
+  local.push(normalizedDrink);
   saveLocalDrinks(local);
-  if (!supabase) return drink;
+  if (!supabase) return normalizedDrink;
   try {
-    const categoryId = await getCategoryIdBySlug(drink.category);
-    const payload = { ...toDrinkRecord(drink), category_id: categoryId ?? undefined };
-    await supabase.from('drinks').insert([payload]);
+    const categoryId = await getCategoryIdBySlug(normalizedDrink.category);
+    const payload = toSupabaseDrinkPayload(normalizedDrink, categoryId);
+    const { error } = await supabase.from('drinks').insert([payload]);
+    if (error) {
+      console.error('Error inserting drink into Supabase:', error.message || error);
+      return normalizedDrink;
+    }
   } catch (e) {
     console.error('Error inserting drink into Supabase:', e);
   }
-  return drink;
+  return normalizedDrink;
 }
 
 export async function updateDrink(id: string, updates: Partial<Omit<Drink, 'id'>>): Promise<Drink | null> {

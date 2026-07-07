@@ -107,7 +107,7 @@ function AccessDeniedView({ lang, onGoHome }: { lang: 'pt-BR' | 'en'; onGoHome: 
 }
 
 // --- COMPONENTE PRINCIPAL DO EVENTDRINK PRO ---
-function MaintenanceView({ lang, onGoHome, title, description, countdownText }: { lang: 'pt-BR' | 'en'; onGoHome: () => void; title: string; description: string; countdownText?: string }) {
+function MaintenanceView({ lang, onGoHome, title, description, countdownText, onAdminLogin }: { lang: 'pt-BR' | 'en'; onGoHome: () => void; title: string; description: string; countdownText?: string; onAdminLogin?: () => void }) {
   const isPt = lang === 'pt-BR';
 
   return (
@@ -143,6 +143,16 @@ function MaintenanceView({ lang, onGoHome, title, description, countdownText }: 
           >
             {isPt ? 'Tentar novamente mais tarde' : 'Try again later'}
           </button>
+          {onAdminLogin && (
+            <button
+              id="maintenance-admin-login-btn"
+              onClick={onAdminLogin}
+              className="rounded-xl border border-neutral-700 bg-neutral-800/50 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:bg-neutral-800 hover:text-white"
+              title={isPt ? 'Acesso administrativo' : 'Admin access'}
+            >
+              {isPt ? 'Acesso Admin' : 'Admin Access'}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -225,8 +235,10 @@ export default function App() {
   const isMaintenanceScheduled = maintenanceStatus.isScheduled;
   const userRole = currentUser?.role || 'FREE';
   const isAdmin = userRole === 'ADMIN';
-  const shouldShowMaintenance = (isMaintenanceMode || isMaintenanceScheduled) && !isAdmin;
+  const isInMaintenance = isMaintenanceMode || isMaintenanceScheduled;
+  const shouldShowMaintenance = isInMaintenance && !isAdmin;
   const [countdownText, setCountdownText] = React.useState('');
+  const [showAdminBypass, setShowAdminBypass] = React.useState(false);
 
   React.useEffect(() => {
     if (!isMaintenanceScheduled || maintenanceStatus.scheduledFor === null) {
@@ -275,6 +287,10 @@ export default function App() {
               setActiveTab('admin-dashboard');
             }
           }}
+          onAdminLogin={() => {
+            setShowAdminBypass(true);
+            setIsLoginModalOpen(true);
+          }}
           title={isMaintenanceScheduled ? (lang === 'pt-BR' ? 'Manutenção programada' : 'Scheduled maintenance') : (lang === 'pt-BR' ? 'Voltamos logo' : 'We will be back shortly')}
           countdownText={isMaintenanceScheduled ? countdownText : undefined}
           description={isMaintenanceScheduled
@@ -285,8 +301,24 @@ export default function App() {
               ? 'O site está temporariamente indisponível enquanto ajustamos o ambiente. Assim que o administrador habilitar o modo normal, o acesso será restaurado.'
               : 'The site is temporarily unavailable while we complete scheduled maintenance. Access will be restored as soon as the administrator turns normal mode back on.')}
         />
+        <UserLoginModal
+          lang={lang}
+          isOpen={isLoginModalOpen && showAdminBypass}
+          onClose={() => {
+            setIsLoginModalOpen(false);
+            setShowAdminBypass(false);
+          }}
+          triggerToast={triggerToast}
+          controller={controller}
+        />
       </div>
     );
+  }
+
+  // If admin successfully logged in during maintenance, allow them to access admin panel
+  if (isInMaintenance && isAdmin && showAdminBypass) {
+    setShowAdminBypass(false);
+    setActiveTab('admin-dashboard');
   }
 
   if (activeTab === 'landing') {
