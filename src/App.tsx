@@ -308,8 +308,15 @@ export default function App() {
             setIsLoginModalOpen(false);
             setShowAdminBypass(false);
           }}
+          currentUser={currentUser}
+          onLoginSuccess={(user) => {
+            setShowAdminBypass(true);
+            setIsLoginModalOpen(false);
+          }}
+          onLogout={() => {
+            setShowAdminBypass(false);
+          }}
           triggerToast={triggerToast}
-          controller={controller}
         />
       </div>
     );
