@@ -135,6 +135,33 @@ export default function App() {
     controller.setAgeVerified(true);
   }, [controller]);
 
+  // Manage browser history so the back button restores the previous tab/page
+  const hasReplacedInitialHistory = React.useRef(false);
+  React.useEffect(() => {
+    if (!hasReplacedInitialHistory.current) {
+      window.history.replaceState({ tab: activeTab }, '', window.location.href);
+      hasReplacedInitialHistory.current = true;
+    }
+  }, [activeTab]);
+
+  React.useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const previousTab = event.state?.tab as Tab | undefined;
+      if (previousTab && previousTab !== activeTab) {
+        setActiveTab(previousTab);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeTab, setActiveTab]);
+
+  React.useEffect(() => {
+    if (hasReplacedInitialHistory.current) {
+      window.history.pushState({ tab: activeTab }, '', window.location.href);
+    }
+  }, [activeTab]);
+
   // Sync route so ADMIN is locked inside the Admin Console,
   // preventing them from seeing the client menus as per user instructions
   React.useEffect(() => {
