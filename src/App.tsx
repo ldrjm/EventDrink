@@ -441,8 +441,8 @@ export default function App() {
 
       {/* 2. TOP HEADER (HIDDEN FOR ADMIN LOGS & PANELS) */}
       {!isAdminTab && (
-        <header id="app-header" className="sticky top-0 z-50 bg-[#0d0d0d] border-b border-neutral-800 px-4 md:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <header id="app-header" className="sticky top-0 z-50 bg-[#0d0d0d] border-b border-neutral-800 px-0 sm:px-4 md:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-0">
             <button
               id="mobile-menu-hamburger-btn"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -453,20 +453,53 @@ export default function App() {
             </button>
             
             <div 
-              className="flex items-center space-x-3 cursor-pointer hover:opacity-90 transition-opacity" 
+              className="hidden sm:flex items-center space-x-3 cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => {
                 setActiveTab('dashboard');
                 setIsMobileMenuOpen(false);
               }}
             >
               <EventDrinkLogo size="md" />
-              <span className="text-[9px] bg-[#a2d729] text-black font-extrabold px-1.5 py-0.5 rounded uppercase tracking-widest leading-none hidden xs:inline-block">
+              <span className="text-[9px] bg-[#a2d729] text-black font-extrabold px-1.5 py-0.5 rounded uppercase tracking-widest leading-none hidden sm:inline-block">
                 PRO v4.0
               </span>
             </div>
+
+            <div className="flex items-center space-x-1 bg-neutral-950 border border-neutral-800 rounded-full p-1 h-9 shadow-inner md:ml-3">
+              <button
+                id="xp-toggle-free"
+                onClick={() => {
+                  if (currentUser?.isLoggedIn) {
+                    controller.toggleUserTier();
+                  }
+                }}
+                className={`px-3 py-1 text-[10px] font-extrabold font-mono rounded-full uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                  !currentUser?.isLoggedIn
+                    ? 'bg-neutral-800 text-neutral-200 shadow-md scale-102 border border-neutral-700/60 font-black' 
+                    : 'text-neutral-500 hover:text-neutral-300'
+                }`}
+              >
+                {lang === 'pt-BR' ? 'Grátis' : 'Free'}
+              </button>
+              <button
+                id="xp-toggle-vip"
+                onClick={() => {
+                  if (!currentUser?.isLoggedIn) {
+                    controller.toggleUserTier();
+                  }
+                }}
+                className={`px-3 py-1 text-[10px] font-extrabold font-mono rounded-full uppercase tracking-widest transition-all duration-300 flex items-center space-x-1 cursor-pointer ${
+                  currentUser?.isLoggedIn
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black shadow-md' 
+                    : 'text-neutral-500 hover:text-amber-400'
+                }`}
+              >
+                <span>VIP ✨</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             
             {/* Seletor internacional de idiomas */}
             <div className="hidden md:flex items-center space-x-1 bg-neutral-950 border border-neutral-800 rounded-full p-1 h-9">
@@ -500,40 +533,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* SELETOR DE EXPERIÊNCIA DE ACESSO */}
-            <div className="flex items-center space-x-1 bg-neutral-950 border border-neutral-800 rounded-full p-1 h-9 shadow-inner">
-              <button
-                id="xp-toggle-free"
-                onClick={() => {
-                  if (currentUser?.isLoggedIn) {
-                    controller.toggleUserTier();
-                  }
-                }}
-                className={`px-3 py-1 text-[10px] font-extrabold font-mono rounded-full uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                  !currentUser?.isLoggedIn
-                    ? 'bg-neutral-800 text-neutral-200 shadow-md scale-102 border border-neutral-700/60 font-black' 
-                    : 'text-neutral-500 hover:text-neutral-300'
-                }`}
-              >
-                {lang === 'pt-BR' ? 'Grátis' : 'Free'}
-              </button>
-              <button
-                id="xp-toggle-vip"
-                onClick={() => {
-                  if (!currentUser?.isLoggedIn) {
-                    controller.toggleUserTier();
-                  }
-                }}
-                className={`px-3 py-1 text-[10px] font-extrabold font-mono rounded-full uppercase tracking-widest transition-all duration-300 flex items-center space-x-1 cursor-pointer ${
-                  currentUser?.isLoggedIn
-                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black shadow-md' 
-                    : 'text-neutral-500 hover:text-amber-400'
-                }`}
-              >
-                <span>VIP ✨</span>
-              </button>
-            </div>
-
             {/* Carrinho de Compras */}
             <motion.button
               id="header-prominent-cart-btn"
@@ -543,14 +542,14 @@ export default function App() {
                 setActiveTab('cart');
                 triggerToast(lang === 'pt-BR' ? 'Acessando o carrinho de compras.' : 'Opening shopping cart.');
               }}
-              className={`flex items-center space-x-2.5 px-4 h-9 rounded-full border transition-all duration-300 cursor-pointer ${
+              className={`flex items-center space-x-2 sm:space-x-2.5 px-3 sm:px-4 h-9 rounded-full border transition-all duration-300 cursor-pointer ${
                 activeTab === 'cart'
                   ? 'bg-gradient-to-r from-[#fe9d00] to-[#ff5d00] border-[#fe9d00] text-black font-extrabold shadow-md shadow-[#fe9d00]/10'
                   : 'bg-neutral-900/80 hover:bg-neutral-850 border-neutral-800 text-neutral-200'
               }`}
             >
               <div className="relative flex items-center">
-                <ShoppingBag className={`w-4 h-4 mr-0.5 ${activeTab === 'cart' ? 'text-black' : 'text-[#fe9d00]'}`} />
+                <ShoppingBag className={`w-4 h-4 ${activeTab === 'cart' ? 'text-black' : 'text-[#fe9d00]'}`} />
                 {cartInfo.count > 0 && (
                   <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center animate-bounce leading-none">
                     {cartInfo.count}
@@ -560,7 +559,7 @@ export default function App() {
               <span className="text-xs font-bold font-sans tracking-tight">
                 {lang === 'pt-BR' ? 'Carrinho' : 'Cart'}
               </span>
-              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
+              <span className={`hidden sm:inline-flex text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
                 activeTab === 'cart' 
                   ? 'bg-black/15 text-black' 
                   : 'text-[#fe9d00] bg-neutral-950 border border-neutral-800/80'

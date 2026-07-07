@@ -254,12 +254,12 @@ export default function LandingPageView({
   ];
 
   return (
-    <div id="landing-page-root" className="min-h-screen bg-black text-neutral-100 font-sans selection:bg-[#fe9d00]/30 overflow-x-hidden relative">
+    <div id="landing-page-root" className="min-h-screen bg-black text-neutral-100 font-sans selection:bg-[#fe9d00]/30 overflow-hidden relative">
       
       {/* Golden spotlight ambient glows */}
-      <div className="absolute top-[10%] left-[-100px] w-96 h-96 rounded-full bg-amber-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute top-[40%] right-[-100px] w-[500px] h-[500px] rounded-full bg-orange-600/5 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[10%] left-[20%] w-96 h-96 rounded-full bg-[#a2d729]/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[10%] left-0 w-64 h-64 sm:w-96 sm:h-96 rounded-full bg-amber-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[40%] right-0 w-64 h-64 sm:w-[500px] sm:h-[500px] rounded-full bg-orange-600/5 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[10%] left-[6%] w-64 h-64 sm:left-[20%] sm:w-96 sm:h-96 rounded-full bg-[#a2d729]/5 blur-[120px] pointer-events-none" />
 
       {/* 1. STICKY PREMIUM HEADER */}
       <header 
@@ -270,9 +270,9 @@ export default function LandingPageView({
             : 'bg-transparent py-5'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 flex items-center justify-between">
           <div 
-            className="flex items-center space-x-3 cursor-pointer group"
+            className="hidden sm:flex items-center space-x-3 cursor-pointer group"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-[#ff5d00] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
@@ -355,30 +355,30 @@ export default function LandingPageView({
 
       {/* 2. MAJESTIC HERO SECTION */}
       <section id="hero" className="pt-32 pb-20 md:py-36 min-h-[90vh] flex items-center justify-center relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* Hero Left Content */}
-            <div className="lg:col-span-6 text-left space-y-6">
-              <span className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500/10 to-[#ff5d00]/10 border border-[#fe9d00]/20 px-3 py-1 rounded-full">
+            <div className="lg:col-span-6 text-center sm:text-left space-y-6 max-w-xl mx-auto lg:mx-0">
+              <span className="inline-flex items-center justify-center sm:justify-start space-x-2 bg-gradient-to-r from-amber-500/10 to-[#ff5d00]/10 border border-[#fe9d00]/20 px-3 py-1 rounded-full">
                 <Sparkles className="w-3.5 h-3.5 text-[#fe9d00]" />
                 <span className="text-[10px] uppercase font-mono font-black tracking-widest text-[#fe9d00]">{text.heroTag}</span>
               </span>
               
-              <h1 className="text-4xl md:text-5xl xl:text-6xl font-black text-white tracking-tight leading-none">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-6xl font-black text-white tracking-tight leading-none">
                 {text.heroTitle}
               </h1>
               
-              <p className="text-sm md:text-base text-neutral-400 leading-relaxed font-sans max-w-xl">
+              <p className="text-sm sm:text-base text-neutral-400 leading-relaxed font-sans max-w-xl mx-auto sm:mx-0">
                 {text.heroSub}
               </p>
 
               {/* Action Double CTAs */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 items-center sm:items-start justify-center sm:justify-start">
                 <button
                   id="hero-planner-cta"
                   onClick={onEnterSite}
-                  className="bg-gradient-to-r from-amber-500 to-[#ff5d00] text-black font-black text-sm px-8 py-4 rounded-full hover:brightness-110 shadow-2xl active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-2.5"
+                  className="bg-gradient-to-r from-amber-500 to-[#ff5d00] text-black font-black text-base sm:text-sm px-10 sm:px-8 py-4 min-h-[56px] w-full sm:w-auto rounded-full hover:brightness-110 shadow-2xl active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-2.5"
                 >
                   <span>{text.ctaPrimary}</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -387,7 +387,7 @@ export default function LandingPageView({
                 <button
                   id="hero-club-cta"
                   onClick={onEnterVIP}
-                  className="bg-neutral-950 hover:bg-neutral-900 text-white font-extrabold text-sm px-8 py-4 rounded-full border border-neutral-800 transition-all cursor-pointer flex items-center justify-center space-x-2 hover:border-[#fe9d00]/30"
+                  className="bg-neutral-950 hover:bg-neutral-900 text-white font-extrabold text-base sm:text-sm px-10 sm:px-8 py-4 min-h-[56px] w-full sm:w-auto rounded-full border border-neutral-800 transition-all cursor-pointer flex items-center justify-center space-x-2 hover:border-[#fe9d00]/30"
                 >
                   <Sparkles className="w-4 h-4 text-[#fe9d00] animate-pulse" />
                   <span>{text.ctaSecondary}</span>
@@ -423,9 +423,9 @@ export default function LandingPageView({
             </div>
 
             {/* Hero Right Visuals */}
-            <div className="lg:col-span-6 relative flex justify-center">
-              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-[#fe9d00]/10 to-[#ff5d00]/20 blur-xl pointer-events-none opacity-80" />
-              <div className="w-full max-w-[500px] aspect-[4/5] rounded-3xl bg-neutral-950 overflow-hidden border border-neutral-800/80 shadow-2xl relative group">
+            <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-[#fe9d00]/10 to-[#ff5d00]/20 blur-xl pointer-events-none opacity-80" />
+              <div className="w-full max-w-[500px] sm:max-w-[460px] md:max-w-[520px] aspect-[4/5] rounded-3xl bg-neutral-950 overflow-hidden border border-neutral-800/80 shadow-2xl relative group mx-auto">
                 <SafeImage 
                   src="https://images.unsplash.com/photo-1572116469696-31de0f17cc34?auto=format&fit=crop&w=800&q=80" 
                   alt="Bartender preparing premium drinks" 
@@ -453,7 +453,7 @@ export default function LandingPageView({
 
       {/* 3. SEÇÃO BENEFÍCIOS */}
       <section id="benefits" className="py-24 bg-[#080808] border-y border-neutral-950 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 xl:px-0">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <span className="text-[#fe9d00] text-xs font-mono font-black tracking-widest uppercase">{lang === 'pt-BR' ? 'QUALIDADE ABSOLUTA' : 'UNCOMPROMISING SERVICE'}</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{text.benefitsTitle}</h2>
@@ -480,7 +480,7 @@ export default function LandingPageView({
 
       {/* 4. COMO FUNCIONA (TIMELINE) */}
       <section id="how-it-works" className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 xl:px-0">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-20">
             <span className="text-[#a2d729] text-xs font-mono font-black tracking-widest uppercase">{lang === 'pt-BR' ? 'PROCESSO SIMPLIFICADO' : 'STEP-BY-STEP FLOW'}</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{text.timelineTitle}</h2>
@@ -557,7 +557,7 @@ export default function LandingPageView({
 
       {/* 5. SEÇÃO EVENTOS */}
       <section id="events" className="py-24 bg-[#080808] border-y border-neutral-950 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 xl:px-0">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <span className="text-[#ff5d00] text-xs font-mono font-black tracking-widest uppercase">{lang === 'pt-BR' ? 'UNIVERSO EXCLUSIVO' : 'CELEBRATING IN STYLE'}</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{text.eventsTitle}</h2>
@@ -603,7 +603,7 @@ export default function LandingPageView({
 
       {/* 6. GALERIA DE FOTOS (MOSAICO COM LIGHTBOX) */}
       <section id="gallery" className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 xl:px-0">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <span className="text-amber-500 text-xs font-mono font-black tracking-widest uppercase">{lang === 'pt-BR' ? 'PORTFÓLIO VISUAL' : 'CRAFTED GALLERY'}</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{text.galleryTitle}</h2>
@@ -642,7 +642,7 @@ export default function LandingPageView({
 
       {/* 7. DEPOIMENTOS DE CLIENTES */}
       <section id="testimonials" className="py-24 bg-[#080808] border-y border-neutral-950 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 xl:px-0">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <span className="text-[#a2d729] text-xs font-mono font-black tracking-widest uppercase">{lang === 'pt-BR' ? 'PROVA DE EXCELÊNCIA' : 'REAL REVIEWS'}</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{lang === 'pt-BR' ? 'A Opinião de Quem Confia' : 'What Our Guests Say'}</h2>
@@ -696,7 +696,7 @@ export default function LandingPageView({
 
       {/* 8. COMPARATIVO FREE X VIP (CLUBE EVENT DRINK) */}
       <section id="club-tiers" className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 xl:px-0">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <span className="text-[#fe9d00] text-xs font-mono font-black tracking-widest uppercase">{lang === 'pt-BR' ? 'ESCOLHA SUA JORNADA' : 'MEMBERSHIP ACCESS'}</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{text.compareTitle}</h2>
@@ -805,7 +805,7 @@ export default function LandingPageView({
 
       {/* 9. CTA FINAL CHAMATIVA */}
       <section className="py-24 bg-gradient-to-b from-black to-[#090909] text-center relative overflow-hidden border-t border-neutral-950">
-        <div className="max-w-4xl mx-auto px-4 md:px-8 space-y-6 relative z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 space-y-6 relative z-10">
           <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">
             {text.ctaFinalTitle}
           </h2>
