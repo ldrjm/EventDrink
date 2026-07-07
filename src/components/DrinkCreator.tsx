@@ -1466,64 +1466,29 @@ export default function DrinkCreator({
 
       {/* PRINTABLE RECIPE CARD - only visible when printing */}
       <div id="drink-recipe-printable" className="hidden">
-        <div className="min-h-screen bg-white text-black p-8">
-          <div className="max-w-3xl mx-auto border border-black/10 rounded-3xl p-8">
-            <div className="mb-6">
-              <h1 className="text-3xl font-black mb-2">{drinkName.trim() || (lang === 'pt-BR' ? 'Cocktail Sem Nome' : 'Unnamed Cocktail')}</h1>
-              <p className="text-sm text-neutral-600">{lang === 'pt-BR' ? 'Ficha técnica de drink criada pelo bartender digital' : 'Recipe card created by the digital bartender'}</p>
-            </div>
-            <div className="grid gap-4 text-sm text-black">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Base' : 'Base'}</span>
-                  <span>{lang === 'pt-BR' ? baseObj.namePt : baseObj.nameEn}</span>
-                </div>
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Diluente' : 'Mixer'}</span>
-                  <span>{lang === 'pt-BR' ? mixerObj.namePt : mixerObj.nameEn}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Xarope/Infusão' : 'Flavor'}</span>
-                  <span>{lang === 'pt-BR' ? flavorObj.namePt : flavorObj.nameEn}</span>
-                </div>
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Volume Total' : 'Total Volume'}</span>
-                  <span>{50 + 120 + (flavorObj.id === 'none' ? 0 : 20)} ml</span>
-                </div>
-              </div>
-              <div className="grid gap-4">
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Guarnição(ões)' : 'Garnish(es)'}</span>
-                  <span>{garnishObjs.length > 0 ? garnishObjs.map(g => lang === 'pt-BR' ? g.namePt : g.nameEn).join(', ') : (lang === 'pt-BR' ? 'Nenhuma' : 'None')}</span>
-                </div>
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Toques Premium' : 'Premium Touches'}</span>
-                  <span>{premiumObjs.length > 0 ? premiumObjs.map(p => lang === 'pt-BR' ? p.namePt : p.nameEn).join(', ') : (lang === 'pt-BR' ? 'Nenhuns' : 'None')}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-black/10 text-sm">
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Calorias' : 'Calories'}</span>
-                  <span>{baseObj.calories + mixerObj.calories + flavorObj.calories + garnishObjs.reduce((acc, g) => acc + g.calories, 0) + premiumObjs.reduce((acc, p) => acc + p.calories, 0)} kcal</span>
-                </div>
-                <div>
-                  <span className="block font-bold">{lang === 'pt-BR' ? 'Custo Estimado' : 'Estimated Cost'}</span>
-                  <span>R$ {unitPrice.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 text-sm leading-relaxed text-black">
-              <h2 className="font-bold mb-3">{lang === 'pt-BR' ? 'Modo de Preparo' : 'Preparation'}</h2>
-              <ol className="list-decimal list-inside space-y-2">
-                <li>{lang === 'pt-BR' ? 'Misture a base com o diluente e o xarope ou infusão em uma coqueteleira ou copo alto.' : 'Combine the base spirit with the mixer and syrup or infusion in a shaker or highball glass.'}</li>
-                <li>{lang === 'pt-BR' ? 'Adicione gelo e mexa delicadamente para equilibrar aromas sem diluir demais.' : 'Add ice and stir gently to balance aromas without over-diluting.'}</li>
-                <li>{lang === 'pt-BR' ? 'Finalize com a(s) guarnição(ões) e o(s) toque(s) premium selecionado(s).' : 'Finish with the selected garnish(es) and premium touch(es).'} </li>
-                <li>{lang === 'pt-BR' ? 'Sirva imediatamente e compartilhe sua criação com o bar.' : 'Serve immediately and share your creation with the bar.'}</li>
-              </ol>
-            </div>
-          </div>
+        <div style={{ padding: '12mm', color: '#000', background: '#fff', fontFamily: 'serif' }}>
+          <h1 style={{ fontSize: '20pt', marginBottom: '6pt' }}>{drinkName.trim() || (lang === 'pt-BR' ? 'Cocktail Sem Nome' : 'Unnamed Cocktail')}</h1>
+          <p style={{ margin: '0 0 8pt 0' }}>{lang === 'pt-BR' ? 'Ficha técnica — receita em formato texto' : 'Recipe card — plain text format'}</p>
+
+          <p><strong>{lang === 'pt-BR' ? 'Base:' : 'Base:'}</strong> {lang === 'pt-BR' ? baseObj.namePt : baseObj.nameEn} — 50 ml</p>
+          <p><strong>{lang === 'pt-BR' ? 'Diluente:' : 'Mixer:'}</strong> {lang === 'pt-BR' ? mixerObj.namePt : mixerObj.nameEn} — 120 ml</p>
+          <p><strong>{lang === 'pt-BR' ? 'Xarope/Infusão:' : 'Flavor:'}</strong> {lang === 'pt-BR' ? flavorObj.namePt : flavorObj.nameEn} {flavorObj.id === 'none' ? `(${lang === 'pt-BR' ? 'sem xarope' : 'no syrup'})` : ''}</p>
+          <p><strong>{lang === 'pt-BR' ? 'Guarnição(ões):' : 'Garnish(es):'}</strong> {garnishObjs.length > 0 ? garnishObjs.map(g => lang === 'pt-BR' ? g.namePt : g.nameEn).join(', ') : (lang === 'pt-BR' ? 'Nenhuma' : 'None')}</p>
+          <p><strong>{lang === 'pt-BR' ? 'Toques Premium:' : 'Premium touches:'}</strong> {premiumObjs.length > 0 ? premiumObjs.map(p => lang === 'pt-BR' ? p.namePt : p.nameEn).join(', ') : (lang === 'pt-BR' ? 'Nenhuns' : 'None')}</p>
+
+          <p><strong>{lang === 'pt-BR' ? 'Volume Total:' : 'Total volume:'}</strong> {50 + 120 + (flavorObj.id === 'none' ? 0 : 20)} ml</p>
+          <p><strong>{lang === 'pt-BR' ? 'Calorias Estimadas:' : 'Estimated calories:'}</strong> {baseObj.calories + mixerObj.calories + flavorObj.calories + garnishObjs.reduce((acc, g) => acc + g.calories, 0) + premiumObjs.reduce((acc, p) => acc + p.calories, 0)} kcal</p>
+          <p><strong>{lang === 'pt-BR' ? 'Custo Estimado:' : 'Estimated cost:'}</strong> R$ {unitPrice.toFixed(2)}</p>
+
+          <h2 style={{ fontSize: '12pt', marginTop: '10pt' }}>{lang === 'pt-BR' ? 'Modo de Preparo' : 'Preparation'}</h2>
+          <ol style={{ marginTop: '6pt' }}>
+            <li>{lang === 'pt-BR' ? 'Combine a base, o diluente e o xarope/infusão em uma coqueteleira ou copo alto.' : 'Combine the base, mixer and syrup/infusion in a shaker or highball.'}</li>
+            <li>{lang === 'pt-BR' ? 'Adicione gelo e mexa/levemente agite conforme a técnica desejada.' : 'Add ice and stir/briefly shake according to desired technique.'}</li>
+            <li>{lang === 'pt-BR' ? 'Coe para a taça apropriada e finalize com a(s) guarnição(ões).' : 'Strain into serving glass and finish with garnish(es).'}</li>
+            <li>{lang === 'pt-BR' ? 'Sirva imediatamente.' : 'Serve immediately.'}</li>
+          </ol>
+
+          <p style={{ marginTop: '12pt', fontSize: '9pt', color: '#111' }}>{lang === 'pt-BR' ? 'Ficha gerada automaticamente pelo criador de drinks.' : 'Card generated automatically by the drink creator.'}</p>
         </div>
       </div>
 

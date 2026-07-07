@@ -60,6 +60,18 @@ html, body {
     color: #000000 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    font-family: Georgia, 'Times New Roman', serif !important;
+    font-size: 12pt !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Force text-only appearance: strip decorations */
+  #drink-recipe-printable * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    border: none !important;
   }
 
   #drink-recipe-printable button,
@@ -68,4 +80,5 @@ html, body {
   #drink-recipe-printable select {
     display: none !important;
   }
+
 }
