@@ -6,6 +6,7 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     root: 'src',
+    envDir: path.resolve(__dirname),
     base: '/EventDrink/',
     plugins: [react(), tailwindcss()],
     resolve: {

@@ -164,6 +164,10 @@ export function useAppController() {
   };
 
   useEffect(() => {
+    console.info('[Supabase] Status inicial:', {
+      configured: !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+      url: import.meta.env.VITE_SUPABASE_URL || null,
+    });
     loadDownloads();
     loadCourses();
     loadDrinks();

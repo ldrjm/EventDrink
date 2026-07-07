@@ -5,7 +5,8 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Safe initialization of Supabase client to prevent app crash if keys are missing
-export const supabase = (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY')
+const hasSupabaseCredentials = Boolean(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY');
+export const supabase = hasSupabaseCredentials
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
@@ -13,6 +14,14 @@ if (supabase) {
   console.log('Supabase client initialized successfully!');
 } else {
   console.warn('Supabase credentials not found or set to placeholder. Operating with secure local state fallback.');
+}
+
+export function getSupabaseStatus() {
+  return {
+    configured: hasSupabaseCredentials,
+    url: supabaseUrl || null,
+    hasAnonKey: Boolean(supabaseAnonKey),
+  };
 }
 
 async function getCategoryIdBySlug(slug: string): Promise<string | null> {
@@ -1382,7 +1391,7 @@ export function saveLocalUserAccounts(accounts: UserAccount[]) {
 export async function getUserAccounts(): Promise<UserAccount[]> {
   if (!supabase) return getLocalUserAccounts();
   try {
-    const { data, error } = await supabase.from('user_accounts').select('*, user_badges(name)').order('createdAt', { ascending: false });
+    const { data, error } = await supabase.from('user_accounts').select('*, user_badges(name)').order('created_at', { ascending: false });
     if (error) {
       console.warn(`[Configuração Supabase] A tabela 'user_accounts' não pôde ser consultada. DDL para criar:\n` +
         `CREATE TABLE IF NOT EXISTS public.user_accounts (\n` +
@@ -1424,11 +1433,9 @@ export async function registerUserAccount(account: UserAccount): Promise<UserAcc
 
   if (!supabase) return account;
   try {
-    // Tenta inserir a conta no Supabase quando a integração estiver configurada.
-    // Se houver falha, o fallback local já registrado continua disponível.
     const badgeId = await getBadgeIdByName(account.badge);
     const payload = { ...toUserAccountRecord(account), badge_id: badgeId ?? null };
-    const { error } = await supabase.from('user_accounts').insert([payload]);
+    const { error } = await supabase.from('user_accounts').insert([payload]).select().single();
     if (error) {
       if (error.message && error.message.includes('check_age')) {
         throw new Error('Cadastro recusado no banco de dados: Idade inferior a 18 anos.');
@@ -1464,7 +1471,8 @@ export async function loginUserAccount(email: string, passwordStr: string): Prom
       .from('user_accounts')
       .select('*, user_badges(name)')
       .eq('email', email)
-      .eq('password', passwordStr);
+      .eq('password', passwordStr)
+      .limit(1);
 
     if (error) {
       if (foundLocal) return foundLocal;
