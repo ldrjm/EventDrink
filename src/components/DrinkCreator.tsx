@@ -492,6 +492,25 @@ export default function DrinkCreator({
     );
   };
 
+  const handlePrintRecipe = () => {
+    const el = document.getElementById('drink-recipe-printable');
+    if (el) {
+      el.classList.remove('hidden');
+      (el as HTMLElement).style.display = 'block';
+    }
+
+    const after = () => {
+      if (el) {
+        el.classList.add('hidden');
+        (el as HTMLElement).style.display = '';
+      }
+      window.removeEventListener('afterprint', after);
+    };
+
+    window.addEventListener('afterprint', after);
+    window.print();
+  };
+
   if (!currentUser?.isLoggedIn) {
     // Simulated live updates for liquid color rendering in the tutorial
     const tutColors: Record<string, string> = {
@@ -1428,7 +1447,7 @@ export default function DrinkCreator({
               <button
                 id="print-drink-recipe-btn"
                 onClick={() => {
-                  window.print();
+                  handlePrintRecipe();
                   triggerToast(lang === 'pt-BR' ? 'Gerando ficha técnica do drink para o bar...' : 'Generating standard barista formulation recipes...');
                 }}
                 className="col-span-1 bg-[#151515] hover:bg-neutral-800 border border-neutral-800 text-neutral-200 font-bold text-xs py-3.5 rounded-xl transition-all flex items-center justify-center space-x-1.5"
