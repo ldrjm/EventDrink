@@ -34,3 +34,37 @@ html, body {
 *, *::before, *::after {
   box-sizing: border-box;
 }
+
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #drink-recipe-printable,
+  #drink-recipe-printable * {
+    visibility: visible;
+  }
+
+  #drink-recipe-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #drink-recipe-printable button,
+  #drink-recipe-printable input,
+  #drink-recipe-printable textarea,
+  #drink-recipe-printable select {
+    display: none !important;
+  }
+}

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getSupabaseStatus } from '../models/SupabaseModel';
 import { Beer, Wine, GlassWater, Sparkles, Receipt } from 'lucide-react';
 
 interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -16,11 +17,13 @@ export const SafeImage: React.FC<SafeImageProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   // Reset states if src changes
   useEffect(() => {
     setLoading(true);
     setError(false);
+    setAttempt(0);
   }, [src]);
 
   const getFallbackIcon = () => {
@@ -41,6 +44,48 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         return <GlassWater className="w-8 h-8 text-neutral-400" />;
     }
   };
+
+  // Normalize and optionally rewrite common storage paths to full URLs
+  const normalizedSrc = useMemo(() => {
+    if (!src) return '';
+    let s = String(src).trim();
+
+    // If protocol-relative (//example.com/...), prepend current protocol
+    if (s.startsWith('//')) {
+      s = window.location.protocol + s;
+    }
+
+    // Prefer https when possible
+    if (s.startsWith('http://')) {
+      s = s.replace(/^http:\/\//i, 'https://');
+    }
+
+    // If Supabase storage relative path or bucket/key is used, build a public object URL
+    try {
+      const supa = getSupabaseStatus();
+      const base = supa?.url ? supa.url.replace(/\/$/, '') : '';
+      if (base) {
+        // Already a storage path starting with /storage or storage/v1/object
+        if (s.startsWith('/storage') || s.startsWith('storage/v1') || s.startsWith('storage/')) {
+          if (!s.startsWith('/')) s = '/' + s;
+          s = base + s;
+        } else if (!/^https?:\/\//i.test(s)) {
+          // If it's a bucket path like '<bucket>/path/to/file.jpg' or 'bucket/path'
+          // map to Supabase public object URL: {supabaseUrl}/storage/v1/object/public/{bucket}/{path}
+          const parts = s.split('/').filter(Boolean);
+          if (parts.length >= 2) {
+            const bucket = parts.shift();
+            const key = parts.join('/');
+            s = `${base}/storage/v1/object/public/${bucket}/${key}`;
+          }
+        }
+      }
+    } catch (e) {
+      // silent fallback if status not available
+    }
+
+    return s;
+  }, [src]);
 
   const getGradientBackground = () => {
     if (isPastOrder) {
@@ -82,12 +127,40 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         </div>
       ) : (
         <img
-          src={src}
+          src={normalizedSrc}
           alt={alt}
           className={`${className} transition-opacity duration-300 ${loading ? 'opacity-0 absolute' : 'opacity-100'}`}
           onLoad={() => setLoading(false)}
-          onError={() => {
+          onError={(ev) => {
+            // Try a single retry by toggling protocol or removing query params
+            console.warn('[SafeImage] failed to load', { src: normalizedSrc, attempt });
             setLoading(false);
+            if (attempt === 0) {
+              setAttempt(1);
+              // attempt repair: strip query params, or try http if https failed
+              let candidate = normalizedSrc;
+              try {
+                const urlObj = new URL(normalizedSrc, window.location.href);
+                // remove search params that could expire (e.g., signed URLs)
+                urlObj.search = '';
+                candidate = urlObj.toString();
+                // if still https, try forcing http (last resort)
+                if (candidate.startsWith('https://')) {
+                  candidate = candidate.replace(/^https:\/\//i, 'http://');
+                }
+              } catch (e) {
+                // ignore
+              }
+
+              // set temporary src attribute to retry
+              const imgEl = ev.currentTarget as HTMLImageElement;
+              if (imgEl && candidate && candidate !== normalizedSrc) {
+                imgEl.src = candidate;
+                setLoading(true);
+                return;
+              }
+            }
+
             setError(true);
           }}
           referrerPolicy="no-referrer"
