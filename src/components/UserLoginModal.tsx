@@ -20,7 +20,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { Language, UserSession } from '../types';
-import { registerUserAccount, loginUserAccount, calculateAge } from '../models/SupabaseModel';
+import { registerUserAccount, loginUserAccount, calculateAge, getSupabaseStatus } from '../models/SupabaseModel';
 
 interface UserLoginModalProps {
   lang: Language;
@@ -247,7 +247,13 @@ export default function UserLoginModal({
             birthDate: account.birthDate
           };
           onLoginSuccess(registeredUser);
-          triggerToast(t.successSignup);
+          // Inform user about backend persistence status
+          const supa = getSupabaseStatus();
+          if (!supa.configured) {
+            triggerToast((lang === 'pt-BR' ? 'Cadastro salvo localmente. Configuração do Supabase ausente; não persistido no banco.' : 'Registered locally; Supabase not configured, not persisted to DB.'));
+          } else {
+            triggerToast(t.successSignup);
+          }
           onClose();
         })
         .catch((err: any) => {
