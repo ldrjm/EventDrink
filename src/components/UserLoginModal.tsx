@@ -232,8 +232,51 @@ export default function UserLoginModal({
         createdAt: new Date().toISOString()
       };
 
-      registerUserAccount(newAccount)
-        .then((account) => {
+      const serverEndpoint = import.meta.env.VITE_USER_REG_ENDPOINT;
+
+      const tryServerRegister = async () => {
+        if (!serverEndpoint) return null;
+        try {
+          const resp = await fetch(serverEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newAccount),
+          });
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err?.error || 'Server registration failed');
+          }
+          const json = await resp.json();
+          return json.account ?? json;
+        } catch (e) {
+          console.warn('Server register failed, falling back to local/registerUserAccount:', e?.message || e);
+          return null;
+        }
+      };
+
+      (async () => {
+        const serverResult = await tryServerRegister();
+        if (serverResult) {
+          setIsLoading(false);
+          const registeredUser = {
+            name: serverResult.name,
+            email: serverResult.email,
+            avatarInitials: calcInitials(serverResult.name),
+            isLoggedIn: true,
+            badge: serverResult.badge || 'VIP Member',
+            role: serverResult.role || 'VIP',
+            eventsCount: 1,
+            phone: serverResult.phone || undefined,
+            birthDate: serverResult.birth_date || serverResult.birthDate
+          };
+          onLoginSuccess(registeredUser);
+          triggerToast(t.successSignup);
+          onClose();
+          return;
+        }
+
+        registerUserAccount(newAccount)
+          .then((account) => {
           setIsLoading(false);
           const registeredUser = {
             name: account.name,
@@ -260,6 +303,7 @@ export default function UserLoginModal({
           setIsLoading(false);
           setErrorMessage(err.message || 'Erro ao registrar.');
         });
+      })();
 
     } else if (mode === 'forgot') {
       if (!email.trim()) {
