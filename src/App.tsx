@@ -251,6 +251,16 @@ export default function App() {
       const minutes = Math.floor(remaining / 60000);
       const seconds = Math.floor((remaining % 60000) / 1000);
       setCountdownText(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+
+      // Auto-refresh when countdown reaches 0:00
+      if (remaining <= 0) {
+        // Activate maintenance immediately via controller
+        controller.activateMaintenance(0);
+        // Refresh page after a short delay to show the new maintenance state
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
     };
 
     updateCountdown();
