@@ -353,9 +353,9 @@ export function useAppController() {
   const [maintenanceStatus, setMaintenanceStatus] = useState<MaintenanceStatus>(() => readMaintenanceStatus());
 
   const activateMaintenance = (minutes: number) => {
-    const normalizedMinutes = Math.max(1, Math.floor(minutes || 1));
+    const normalizedMinutes = Math.max(0, Math.floor(minutes || 0));
     const nextStatus: MaintenanceStatus = {
-      isEnabled: false,
+      isEnabled: normalizedMinutes <= 0,
       isScheduled: normalizedMinutes > 0,
       scheduledFor: normalizedMinutes > 0 ? Date.now() + normalizedMinutes * 60_000 : null,
       warningMinutes: normalizedMinutes,
@@ -371,8 +371,6 @@ export function useAppController() {
     try {
       localStorage.setItem('eventdrink_maintenance_status', JSON.stringify(maintenanceStatus));
     } catch (e) {}
-
-    window.dispatchEvent(new Event('eventdrink-maintenance-changed'));
   }, [maintenanceStatus]);
 
   useEffect(() => {
@@ -381,11 +379,9 @@ export function useAppController() {
     };
 
     window.addEventListener('storage', syncMaintenanceStatus);
-    window.addEventListener('eventdrink-maintenance-changed', syncMaintenanceStatus);
 
     return () => {
       window.removeEventListener('storage', syncMaintenanceStatus);
-      window.removeEventListener('eventdrink-maintenance-changed', syncMaintenanceStatus);
     };
   }, []);
 
